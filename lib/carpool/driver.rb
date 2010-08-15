@@ -23,15 +23,13 @@ module Carpool
     
     def call(env)
       
-      return unless env['PATH_INFO'] == "/sso/authenticate"
-      
       @env = env
-      result  = @app.call(env)
       
-      unless env['HTTP_REFERRER'].nil?
-        cookies[:referring_domain] = URI.parse(env['HTTP_REFERRER']).host
-        cookies[:redirect_to]      = env['HTTP_REFERRER']
-      end
+      # Unless we are trying to authenticate a passenger, just continue through the stack.
+      return @app.call(env) unless valid_request? && valid_referrer?  
+      puts "Referrer: #{valid_referrer?}"
+      @call_result = @app.call(env)
+      attempt_authentication!
       
     end
         
@@ -41,6 +39,21 @@ module Carpool
     
     def cookies
       session['carpool.cookies'] ||={}
+    end
+    
+    private
+    
+    def attempt_authentication!
+      cookies[:referring_domain] = URI.parse(@env['HTTP_REFERRER']).host
+      cookies[:redirect_to]      = @env['HTTP_REFERRER']
+    end
+    
+    def valid_referrer?
+      !(@env['HTTP_REFERRER'].nil? or @env['HTTP_REFERRER'].blank?)
+    end
+    
+    def valid_request?
+      @env['PATH_INFO'] == "/sso/authenticate"
     end
     
   end

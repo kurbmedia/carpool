@@ -5,12 +5,13 @@ begin
   require 'jeweler'
   Jeweler::Tasks.new do |gem|
     gem.name = "carpool"
-    gem.summary = %Q{TODO: one-line summary of your gem}
-    gem.description = %Q{TODO: longer description of your gem}
-    gem.email = "brent@kurbmedia.com"
+    gem.summary = %Q{Single Sign On solution for Rails applications}
+    gem.description = %Q{Carpool is a single sign on solution for Rails applications allowing you to persist sessions across domains.}
+    gem.email = "dev@kurbmedia.com"
     gem.homepage = "http://github.com/kurbmedia/carpool"
     gem.authors = ["Brent Kirby"]
     gem.add_development_dependency "thoughtbot-shoulda", ">= 0"
+    gem.add_dependency "fast-aes"
     # gem is a Gem::Specification... see http://www.rubygems.org/read/chapter/20 for additional settings
   end
   Jeweler::GemcutterTasks.new

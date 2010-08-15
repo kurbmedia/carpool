@@ -10,7 +10,7 @@ Gem::Specification.new do |s|
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Brent Kirby"]
   s.date = %q{2010-08-15}
-  s.description = %q{Carpool is a single sign on solution for Rails applications allowing you to persist sessions across domains.}
+  s.description = %q{Carpool is a single sign on solution for Rack-based applications allowing you to persist sessions across domains.}
   s.email = %q{dev@kurbmedia.com}
   s.extra_rdoc_files = [
     "LICENSE",
@@ -23,7 +23,11 @@ Gem::Specification.new do |s|
      "README.rdoc",
      "Rakefile",
      "VERSION",
+     "carpool.gemspec",
+     "init.rb",
      "lib/carpool.rb",
+     "lib/carpool/driver.rb",
+     "lib/carpool/passenger.rb",
      "test/helper.rb",
      "test/test_carpool.rb"
   ]
@@ -31,7 +35,7 @@ Gem::Specification.new do |s|
   s.rdoc_options = ["--charset=UTF-8"]
   s.require_paths = ["lib"]
   s.rubygems_version = %q{1.3.7}
-  s.summary = %q{Single Sign On solution for Rails applications}
+  s.summary = %q{Single Sign On solution for Rack-Based applications}
   s.test_files = [
     "test/helper.rb",
      "test/test_carpool.rb"

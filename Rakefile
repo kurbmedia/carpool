@@ -5,8 +5,8 @@ begin
   require 'jeweler'
   Jeweler::Tasks.new do |gem|
     gem.name = "carpool"
-    gem.summary = %Q{Single Sign On solution for Rails applications}
-    gem.description = %Q{Carpool is a single sign on solution for Rails applications allowing you to persist sessions across domains.}
+    gem.summary = %Q{Single Sign On solution for Rack-Based applications}
+    gem.description = %Q{Carpool is a single sign on solution for Rack-based applications allowing you to persist sessions across domains.}
     gem.email = "dev@kurbmedia.com"
     gem.homepage = "http://github.com/kurbmedia/carpool"
     gem.authors = ["Brent Kirby"]

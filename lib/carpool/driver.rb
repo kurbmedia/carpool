@@ -4,6 +4,8 @@ module Carpool
   
   class Driver
     
+    include Carpool::Mixins::Core
+    
     class << self
       
       attr_accessor :site_key
@@ -15,6 +17,7 @@ module Carpool
       
       def passenger(url, options = {})
         options[:site_key] ||= Carpool.generate_site_key(url)
+        options[:secret]   ||= Carpool.generate_site_key(url.reverse)
         passengers << { url => options }
       end
       
@@ -63,27 +66,17 @@ module Carpool
       else
         
         puts "Carpool::Driver: Redirecting to passenger site.."
-        seatbelt = Carpool.generate_seatbelt(@env['HTTP_REFERER'], cookies[:passenger_token])
-        
-        new_uri  = "#{referrer.protocol}://"
-        new_uri << referrer.host
-        new_uri << (referrer.port) ? ":#{referrer.port}" : ""
-        new_uri << "/sso/authorize?seatbelt=#{seatbelt}"
-        
-        response = [301, {'Location' => new_uri}, 'Approved!']
+        cookies[:redirect_to] = referrer
+        seatbelt = SeatBelt.new(env).create_payload!
+
+        response = [301, {'Location' => seatbelt}, 'Approved!']
+        Carpool.auth_attempt  = false
+        cookies[:redirect_to] = false
                 
       end
       
       response
       
-    end
-        
-    def session
-      @env['rack.session']
-    end
-    
-    def cookies
-      session['carpool.cookies'] ||= {}
     end
     
     private

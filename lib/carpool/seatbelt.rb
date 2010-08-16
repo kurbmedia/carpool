@@ -23,7 +23,10 @@ module Carpool
     #
     def fasten!(user)
       cookies[:passenger_token] = generate_token(user)
-      create_payload!
+      Carpool.auth_attempt = false
+      payload = create_payload!
+      cookies[:redirect_to] = nil
+      payload
     end
     
     # Restore the user from our payload. We 'remove' their seatbelt because they have arrived!

@@ -14,6 +14,7 @@ module Carpool
     
     def initialize(app)
       @app = app
+      Carpool.acts_as = :passenger
       yield Carpool::Passenger if block_given?
       self
     end

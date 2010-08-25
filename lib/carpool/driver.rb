@@ -10,6 +10,7 @@ module Carpool
       
       attr_accessor :site_key
       attr_accessor :unauthorized_uri
+      attr_accessor :revoke_uri
       
       def passengers
         @passengers ||= []
@@ -29,6 +30,7 @@ module Carpool
     
     def initialize(app)
       @app = app
+      Carpool.acts_as = :driver
       yield Carpool::Driver if block_given?
       self
     end
@@ -47,6 +49,11 @@ module Carpool
       # Unless this domain is listed as a potential passenger, issue a 500.
       unless Carpool::Driver.passengers.collect{ |p| p.keys.first.downcase }.include?(referrer.host)   
         return [500, {}, 'Unauthorized request.']
+      end
+      
+      if is_revoking?
+        response = [302, {'Location' => Carpool::Driver.revoke_uri}, 'Redirecting logged out session...']
+        return response
       end
       
       # Attempt to find an existing driver session.
@@ -87,7 +94,11 @@ module Carpool
     end
     
     def valid_request?
-      @env['PATH_INFO'].downcase == "/sso/authenticate"
+      @env['PATH_INFO'].downcase == "/sso/authenticate" || @env['PATH_INFO'].downcase == "/sso/revoke"
+    end
+    
+    def is_revoking?
+      @env['PATH_INFO'].downcase == "/sso/revoke"
     end
     
   end

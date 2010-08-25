@@ -16,6 +16,20 @@ module Carpool
       @auth_attempt ||= false
     end
     
+    def driver_uri
+      "#{Carpool::Passenger.driver_uri}/sso/authenticate"
+    end
+    
+    def revoke_uri
+      "#{Carpool::Passenger.driver_uri}/sso/revoke"
+    end
+    
+    def acts_as=(obj); @acts_as = obj.to_sym; end
+    def acts_as; @acts_as; end
+    def acts_as?(type)
+      @acts_as == type.to_sym
+    end
+    
   end
   
   def self.generate_site_key(url)

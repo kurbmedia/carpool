@@ -31,12 +31,12 @@ module Carpool
     
     # Restore the user from our payload. We 'remove' their seatbelt because they have arrived!
     def remove!
-      payload  = env['X-CARPOOL-PAYLOAD']
+      payload  = @env['X-CARPOOL-PAYLOAD']
       payload  = payload.flatten.first if payload.is_a?(Array) # TODO: Figure out why our header is an array?
       seatbelt = YAML.load(Base64.decode64(CGI.unescape(payload))).to_hash
       puts "Seatbelt: #{seatbelt.inspect}"
       user     = Base64.decode64(seatbelt[:user])
-      key      = Carpool.generate_site_key(env['SERVER_NAME'])
+      key      = Carpool.generate_site_key(@env['SERVER_NAME'])
       secret   = Carpool::Passenger.secret
       digest   = Digest::SHA256.new
       digest.update("#{key}--#{secret}")

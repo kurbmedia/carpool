@@ -40,7 +40,7 @@ module Carpool
 
       # Unless we are trying to authenticate a passenger, just continue through the stack.
       return @app.call(env) unless valid_request? && valid_referrer? 
-      
+
       # Parse the referring site
       referrer = URI.parse(@env['HTTP_REFERER'])
       
@@ -61,7 +61,7 @@ module Carpool
         puts "Carpool::Driver: Redirecting to authentication path.."
         Carpool.auth_attempt = true
         cookies[:redirect_to] = referrer
-        response = [301, {'Location' => Carpool::Driver.unauthorized_uri}, 'Redirecting unauthorized user...']
+        response = [302, {'Location' => Carpool::Driver.unauthorized_uri}, 'Redirecting unauthorized user...']
         
       else
         
@@ -69,7 +69,7 @@ module Carpool
         cookies[:redirect_to] = referrer
         seatbelt = SeatBelt.new(env).create_payload!
 
-        response = [301, {'Location' => seatbelt}, 'Approved!']
+        response = [302, {'Location' => seatbelt}, 'Approved!']
         Carpool.auth_attempt  = false
         cookies[:redirect_to] = false
                 
@@ -82,6 +82,7 @@ module Carpool
     private
     
     def valid_referrer?
+      puts "Referrer?: #{@env['HTTP_REFERER']}"
       !(@env['HTTP_REFERER'].nil? or @env['HTTP_REFERER'].blank?)
     end
     

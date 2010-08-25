@@ -43,9 +43,12 @@ module Carpool
     
     def valid_referrer?
       return false if @env['HTTP_REFERER'].nil? or @env['HTTP_REFERER'].blank?
-      referring_uri = URI.parse(@env['HTTP_REFERER'])
-      driver_uri    = URI.parse(Carpool::Passenger.driver_uri)
-      referring_uri.host.to_s.downcase === driver_uri.host.to_s.downcase
+      true
+      # TODO: Figure out referers don't always work right when coming from redirect_to in rails.
+      # referring_uri = URI.parse(@env['HTTP_REFERER'])
+      #       driver_uri    = URI.parse(Carpool::Passenger.driver_uri)
+      #       puts "Trying to match #{referring_uri} to #{driver_uri}"
+      #       referring_uri.host.to_s.downcase === driver_uri.host.to_s.downcase
     end
     
   end

@@ -21,17 +21,17 @@ module Carpool
     
     def call(env)
       @env = env
+      @params = CGI.parse(env['QUERY_STRING'])
       cookies[:scope] = "passenger"
       
       # If this isn't an authorize request from the driver, just ignore it.
       return @app.call(env) unless valid_request? && valid_referrer?
       
-      # If we can't find our payload, then we need to abort.
-      params = CGI.parse(env['QUERY_STRING'])
-      return [500, {}, 'Invalid seatbelt.'] if params['seatbelt'].nil? or params['seatbelt'].blank?
+      # If we can't find our payload, then we need to abort.      
+      return [500, {}, 'Invalid seatbelt.'] if @params['seatbelt'].nil? or @params['seatbelt'].blank?
       
       # Set a custom HTTP header for our payload and send the request to the user's /sso/authorize handler.
-      env['X-CARPOOL-PAYLOAD'] = params['seatbelt']
+      env['X-CARPOOL-PAYLOAD'] = @params['seatbelt']
       return @app.call(env)
       
     end
@@ -44,12 +44,13 @@ module Carpool
     
     def valid_referrer?
       return false if @env['HTTP_REFERER'].nil? or @env['HTTP_REFERER'].blank?
-      true
-      # TODO: Figure out referers don't always work right when coming from redirect_to in rails.
-      # referring_uri = URI.parse(@env['HTTP_REFERER'])
-      #       driver_uri    = URI.parse(Carpool::Passenger.driver_uri)
-      #       puts "Trying to match #{referring_uri} to #{driver_uri}"
-      #       referring_uri.host.to_s.downcase === driver_uri.host.to_s.downcase
+      return false if @params['driver'].nil?    or @params['driver'].blank?
+      
+      referring_uri = @params['driver'].to_s
+      secret_match  = Digest::SHA256.new
+      secret_match  = secret_match.update(Carpool::Passenger.secret).digest.to_s
+      puts "Trying to match #{referring_uri} to #{secret_match} : #{referring_uri == secret_match}"
+      referring_uri === secret_match
     end
     
   end

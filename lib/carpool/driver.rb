@@ -47,7 +47,8 @@ module Carpool
       referrer = URI.parse(@env['HTTP_REFERER'])
       
       # Unless this domain is listed as a potential passenger, issue a 500.
-      unless Carpool::Driver.passengers.collect{ |p| p.keys.first.downcase }.include?(referrer.host)   
+      current_passenger = Carpool::Driver.passengers.reject{ |p| !p.keys.first.downcase.include?(referrer.host) }
+      if current_passenger.nil? or current_passenger.empty?
         return [500, {}, 'Unauthorized request.']
       end
       
@@ -55,6 +56,8 @@ module Carpool
         response = [302, {'Location' => Carpool::Driver.revoke_uri}, 'Redirecting logged out session...']
         return response
       end
+      
+      cookies[:current_passenger] = current_passenger.first[referrer.host.to_s]
       
       # Attempt to find an existing driver session.
       # If one is found, redirect back to the passenger site and include our seatbelt
@@ -67,8 +70,8 @@ module Carpool
         
         puts "Carpool::Driver: Redirecting to authentication path.."
         Carpool.auth_attempt = true
-        cookies[:redirect_to] = referrer
-        response = [302, {'Location' => Carpool::Driver.unauthorized_uri}, 'Redirecting unauthorized user...']
+        cookies[:redirect_to] = referrer        
+        response = [302, {'Location' => Carpool::Driver.unauthorized_uri}, 'Redirecting unauthorized user...']        
         
       else
         
@@ -79,6 +82,7 @@ module Carpool
         response = [302, {'Location' => seatbelt}, 'Approved!']
         Carpool.auth_attempt  = false
         cookies[:redirect_to] = false
+        cookies[:current_passenger] = nil
                 
       end
       

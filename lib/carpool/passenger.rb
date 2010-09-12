@@ -48,9 +48,13 @@ module Carpool
       
       referring_uri = @params['driver'].to_s
       secret_match  = Digest::SHA256.new
-      secret_match  = secret_match.update(Carpool::Passenger.secret).digest.to_s
+      secret_match  = secret_match.update(Carpool::Passenger.secret).to_s
+      referring_uri = referring_uri.to_s.gsub(/(\[|\]|\")/,'') # TODO: Figure out why ruby 1.9.2 has extra chars.
+      secret_match  = secret_match.to_s
+      puts "Referring URI: #{referring_uri.class}"
+      puts "Secret: #{secret_match.class}"
       puts "Trying to match #{referring_uri} to #{secret_match} : #{referring_uri == secret_match}"
-      referring_uri === secret_match
+      referring_uri == secret_match
     end
     
   end

@@ -52,7 +52,7 @@ module Carpool
       seatbelt = self.to_s
       referrer = cookies[:redirect_to]
       driver   = Digest::SHA256.new
-      driver   = driver.update(cookies[:current_passenger][:secret]).digest.to_s
+      driver   = driver.update(cookies[:current_passenger][:secret]).to_s
       new_uri  = "#{referrer.scheme}://"
       new_uri << referrer.host
       new_uri << ((referrer.port != 80 && referrer.port != 443) ? ":#{referrer.port}" : "")

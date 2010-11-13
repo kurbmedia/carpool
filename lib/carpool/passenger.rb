@@ -27,11 +27,19 @@ module Carpool
       # If this isn't an authorize request from the driver, just ignore it.
       return @app.call(env) unless valid_request? && valid_referrer?
       
-      # If we can't find our payload, then we need to abort.      
+      if env['HTTP_X_REQUESTED_WITH'] && env['HTTP_X_REQUESTED_WITH'].to_s.downcase.eql?('xmlhttprequest')      
+        # If we are requesting authentication via ajax, attempt to do so via proxy.
+        
+        # Set a js content-type so we know to respond with javascript.
+        env['Content-Type'] = "text/javascript"
+      end      
+      
+      # If we can't find our payload, then we need to abort.
       return [500, {}, 'Invalid seatbelt.'] if @params['seatbelt'].nil? or @params['seatbelt'].blank?
       
       # Set a custom HTTP header for our payload and send the request to the user's /sso/authorize handler.
       env['X-CARPOOL-PAYLOAD'] = @params['seatbelt']
+      
       return @app.call(env)
       
     end
@@ -39,7 +47,7 @@ module Carpool
     private
     
     def valid_request?
-      @env['PATH_INFO'] == "/sso/authorize"
+      @env['PATH_INFO'] == "/sso/authorize" || @env['PATH_INFO'] == "/sso/remote_authentication"
     end
     
     def valid_referrer?
@@ -55,6 +63,10 @@ module Carpool
       puts "Secret: #{secret_match.class}"
       puts "Trying to match #{referring_uri} to #{secret_match} : #{referring_uri == secret_match}"
       referring_uri == secret_match
+    end
+    
+    def authenticate_from_remote!
+      
     end
     
   end

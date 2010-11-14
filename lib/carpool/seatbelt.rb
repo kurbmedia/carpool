@@ -22,7 +22,7 @@ module Carpool
     # on the other end.
     #
     def fasten!(user)
-      carpool_passenger_token = generate_token(user)
+      carpool_cookies['passenger_token'] = generate_token(user)
       Carpool.auth_attempt = false
       payload = create_payload!
       cleanup_session!
@@ -34,20 +34,21 @@ module Carpool
       payload  = @env['X-CARPOOL-PAYLOAD']
       payload  = payload.flatten.first if payload.is_a?(Array) # TODO: Figure out why our header is an array?
       seatbelt = YAML.load(Base64.decode64(CGI.unescape(payload))).to_hash
-      user     = Base64.decode64(seatbelt[:user])
+      user     = Base64.decode64(seatbelt['user'])
       key      = Carpool.generate_site_key(@env['SERVER_NAME'])
       secret   = Carpool::Passenger.secret
       digest   = Digest::SHA256.new
       digest.update("#{key}--#{secret}")
       aes  = FastAES.new(digest.digest)
       data = aes.decrypt(user)
-      @redirect_uri = seatbelt[:redirect_uri].to_s
+      @redirect_uri = seatbelt['redirect_uri'].to_s
       @user         = YAML.load(data).to_hash
       self
     end
     
     # Create a redirection payload to be sent back to our passenger
     def create_payload!
+      puts self.class.to_s
       seatbelt = self.to_s
       referrer = carpool_cookies['redirect_to']
       driver   = Digest::SHA256.new
@@ -59,7 +60,7 @@ module Carpool
     end
     
     def to_s
-      CGI.escape(Base64.encode64({ :redirect_uri => carpool_cookies['redirect_to'].to_s, :user => carpool_passenger_token }.to_yaml.to_s).gsub( /\s/, ''))
+      CGI.escape(Base64.encode64({ 'redirect_uri' => carpool_cookies['redirect_to'].to_s, 'user' => carpool_cookies['passenger_token'] }.to_yaml.to_s).gsub( /\s/, ''))
     end
     
     def set_referrer(ref)
@@ -80,7 +81,7 @@ module Carpool
     end
     
     def gather_credentials(user)
-      (user.respond_to?(:encrypted_credentials) ?  user.encrypted_credentials : {})
+      user.encrypted_credentials
     end
         
   end

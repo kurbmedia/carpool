@@ -40,7 +40,6 @@ module Carpool
       @env = env
       carpool_cookies['scope'] = "driver"
       puts session.inspect
-
       # Unless we are trying to authenticate a passenger, just continue through the stack.
       return @app.call(env) unless valid_request? && valid_referrer? 
 
@@ -69,12 +68,13 @@ module Carpool
       #   2) The session payload. This is an AES encrypted hash of whatever attributes you've made available. The encrypted hash is
       #      keyed with the site_key and secret of the referring site for extra security.
       #
-      unless carpool_passenger_token.nil?
+      if carpool_passenger_token
         seatbelt = SeatBelt.new(env)
         seatbelt.set_referrer(referrer)
+        seatbelt = seatbelt.create_payload!
         Carpool.auth_attempt  = false
         cleanup_session!
-        return Carpool.redirect_request(seatbelt.create_payload!, 'Approved!')
+        return Carpool.redirect_request(seatbelt, 'Approved!')
       end
       
       Carpool.auth_attempt = true

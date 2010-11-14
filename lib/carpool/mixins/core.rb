@@ -13,11 +13,11 @@ module Carpool
         end
         
         def carpool_passenger_token
-          session['_carpool_passenger_token']
+          carpool_cookies['passenger_token']
         end
         
         def carpool_passenger_token=(token)
-          session['_carpool_passenger_token'] = token
+          carpool_cookies['passenger_token'] = token
         end
         
         def cleanup_session!

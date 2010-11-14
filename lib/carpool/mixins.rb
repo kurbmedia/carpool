@@ -14,6 +14,15 @@ module Carpool
         def cookies
           session['carpool.cookies'] ||= {}
         end
+        
+        def cleanup_session!
+          [:redirect_to, :current_passenger].each{ |k| cookies.delete(k) }
+        end
+        
+        def destroy_session!
+          session.delete['carpool.cookies']
+        end
+        
       end
     end
     

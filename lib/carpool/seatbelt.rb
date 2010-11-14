@@ -25,7 +25,7 @@ module Carpool
       cookies[:passenger_token] = generate_token(user)
       Carpool.auth_attempt = false
       payload = create_payload!
-      cookies[:redirect_to] = nil
+      cleanup_session!
       payload
     end
     

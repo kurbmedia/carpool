@@ -54,7 +54,7 @@ module Carpool
       
       # We are logging out this user, clear out our cookies and reset the session.
       if is_revoking?
-        session.delete('carpool.cookies')
+        destroy_session!
         response = [302, {'Location' => Carpool::Driver.revoke_uri}, 'Redirecting logged out session...']
         return response
       end
@@ -91,8 +91,7 @@ module Carpool
 
         response = [302, {'Location' => seatbelt}, 'Approved!']
         Carpool.auth_attempt  = false
-        cookies[:redirect_to] = false
-        cookies[:current_passenger] = nil
+        cleanup_session!
                 
       end
       

@@ -52,7 +52,9 @@ module Carpool
         return [500, {}, 'Unauthorized request.']
       end
       
+      # We are logging out this user, clear out our cookies and reset the session.
       if is_revoking?
+        session.delete('carpool.cookies')
         response = [302, {'Location' => Carpool::Driver.revoke_uri}, 'Redirecting logged out session...']
         return response
       end

@@ -72,8 +72,12 @@ module Carpool
       digest    = Digest::SHA256.new
       digest.update("#{passenger[:site_key]}--#{passenger[:secret]}")
       aes = FastAES.new(digest.digest)
-      Base64.encode64(aes.encrypt(user.encrypted_credentials.to_yaml.to_s)).gsub( /\s/, '')
+      Base64.encode64(aes.encrypt(gather_credentials(user).to_yaml.to_s)).gsub( /\s/, '')
       
+    end
+    
+    def gather_credentials(user)
+      (user.respond_to?(:encrypted_credentials) ?  user.encrypted_credentials : {})
     end
         
   end

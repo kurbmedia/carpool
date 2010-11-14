@@ -1,8 +1,10 @@
-require 'carpool/mixins'
+require 'carpool/mixins/core'
 require 'carpool/driver'
 require 'carpool/passenger'
 require 'carpool/seatbelt'
 require 'base64'
+
+require 'carpool/rails/railtie' if defined?(Rails)
 
 module Carpool
   

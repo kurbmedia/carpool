@@ -74,9 +74,9 @@ module Carpool
         unless requested_with.eql?("CarpoolRemoteAuthRequest") || requested_with.downcase.eql?("xmlhttprequest")
           Carpool.auth_attempt = true
           cookies[:redirect_to] = referrer
-          #@env['PATH_INFO'] = Carpool::Driver.unauthorized_uri
-          #return @app.call(env)
-          response = Carpool.redirect_request(Carpool::Driver.unauthorized_uri, 'Redirecting unauthorized user...')
+          @env['PATH_INFO'] = Carpool::Driver.unauthorized_uri
+          return @app.call(env)
+          #response = Carpool.redirect_request(Carpool::Driver.unauthorized_uri, 'Redirecting unauthorized user...')
         else
           # If we are using AJAX to process this request, return false for login as we cannot simply
           # redirect the request.

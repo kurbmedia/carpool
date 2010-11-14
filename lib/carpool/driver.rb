@@ -73,7 +73,6 @@ module Carpool
         requested_with = env['HTTP_X_REQUESTED_WITH'].to_s
         
         unless requested_with.eql?("CarpoolRemoteAuthRequest") || requested_with.downcase.eql?("xmlhttprequest")
-          puts "Carpool::Driver: Redirecting to authentication path.."
           Carpool.auth_attempt = true
           cookies[:redirect_to] = referrer        
           response = [302, {'Location' => Carpool::Driver.unauthorized_uri}, 'Redirecting unauthorized user...']
@@ -85,7 +84,6 @@ module Carpool
         
       else
         
-        puts "Carpool::Driver: Redirecting to passenger site.."
         cookies[:redirect_to] = referrer
         seatbelt = SeatBelt.new(env).create_payload!
 
@@ -102,7 +100,6 @@ module Carpool
     private
     
     def valid_referrer?
-      puts "Referrer?: #{@env['HTTP_REFERER']}"
       !(@env['HTTP_REFERER'].nil? or @env['HTTP_REFERER'].blank?)
     end
     

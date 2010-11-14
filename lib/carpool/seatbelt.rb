@@ -34,7 +34,6 @@ module Carpool
       payload  = @env['X-CARPOOL-PAYLOAD']
       payload  = payload.flatten.first if payload.is_a?(Array) # TODO: Figure out why our header is an array?
       seatbelt = YAML.load(Base64.decode64(CGI.unescape(payload))).to_hash
-      puts "Seatbelt: #{seatbelt.inspect}"
       user     = Base64.decode64(seatbelt[:user])
       key      = Carpool.generate_site_key(@env['SERVER_NAME'])
       secret   = Carpool::Passenger.secret

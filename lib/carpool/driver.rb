@@ -37,7 +37,7 @@ module Carpool
     
     def call(env)
       
-      @env = env
+      @env    = env
       cookies[:scope]    = "driver"
 
       # Unless we are trying to authenticate a passenger, just continue through the stack.
@@ -49,14 +49,13 @@ module Carpool
       # Unless this domain is listed as a potential passenger, issue a 500.
       current_passenger = Carpool::Driver.passengers.reject{ |p| !p.keys.first.downcase.include?(referrer.host) }
       if current_passenger.nil? or current_passenger.empty?
-        return [500, {}, 'Unauthorized request.']
+        return [500, {'Content-Type'=>'text/plain'}, 'Unauthorized request.']
       end
       
       # We are logging out this user, clear out our cookies and reset the session.
       if is_revoking?
         destroy_session!
-        response = [302, {'Location' => Carpool::Driver.revoke_uri}, 'Redirecting logged out session...']
-        return response
+        return Carpool.redirect_request(Carpool::Driver.revoke_uri, 'Redirecting logged out session...')
       end
       
       cookies[:current_passenger] = current_passenger.first[referrer.host.to_s]
@@ -74,8 +73,10 @@ module Carpool
         
         unless requested_with.eql?("CarpoolRemoteAuthRequest") || requested_with.downcase.eql?("xmlhttprequest")
           Carpool.auth_attempt = true
-          cookies[:redirect_to] = referrer        
-          response = [302, {'Location' => Carpool::Driver.unauthorized_uri}, 'Redirecting unauthorized user...']
+          cookies[:redirect_to] = referrer
+          #@env['PATH_INFO'] = Carpool::Driver.unauthorized_uri
+          #return @app.call(env)
+          response = Carpool.redirect_request(Carpool::Driver.unauthorized_uri, 'Redirecting unauthorized user...')
         else
           # If we are using AJAX to process this request, return false for login as we cannot simply
           # redirect the request.
@@ -87,7 +88,7 @@ module Carpool
         cookies[:redirect_to] = referrer
         seatbelt = SeatBelt.new(env).create_payload!
 
-        response = [302, {'Location' => seatbelt}, 'Approved!']
+        response = Carpool.redirect_request(seatbelt, 'Approved!')
         Carpool.auth_attempt  = false
         cleanup_session!
                 

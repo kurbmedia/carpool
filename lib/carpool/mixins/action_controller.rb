@@ -34,7 +34,7 @@ module Carpool
       
       def revoke_authentication!
         if Carpool.acts_as?(:driver)
-          carpool_rack_env['rack.session'].delete('carpool.cookies')
+          carpool_rack_env.delete('carpool')
         else
           redirect_to carpool_logout_url
         end

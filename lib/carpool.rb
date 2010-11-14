@@ -32,6 +32,15 @@ module Carpool
       @acts_as == type.to_sym
     end
     
+    def redirect_request(loc, message = "Redirecting")
+      [302,
+        { 'Content-Type'   => 'text/plain', 
+          'Location'       => loc,
+          'Cache-Control'  => 'private, no-cache, max-age=0, must-revalidate',
+          'Content-Length' => "#{message.to_s.length}"
+        }, message]
+    end
+    
   end
   
   def self.generate_site_key(url)

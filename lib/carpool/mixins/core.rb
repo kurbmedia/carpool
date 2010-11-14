@@ -7,20 +7,37 @@ module Carpool
       end
       
       module InstanceMethods
-        def session
-          @env['rack.session']
-        end
-
-        def cookies
+        
+        def carpool_cookies
           session['carpool.cookies'] ||= {}
         end
         
+        def carpool_passenger_token
+          session['_carpool_passenger_token']
+        end
+        
+        def carpool_passenger_token=(token)
+          session['_carpool_passenger_token'] = token
+        end
+        
         def cleanup_session!
-          [:redirect_to, :current_passenger].each{ |k| cookies.delete(k) }
+          ['redirect_to', 'current_passenger'].each{ |k| carpool_cookies.delete(k) }
         end
         
         def destroy_session!
-          session.delete('carpool.cookies')
+          session.clear
+        end
+        
+        def request
+          @request ||= Rack::Request.new(@env)
+        end
+        
+        def session
+          @env['rack.session']
+        end
+        
+        def set_new_path(p)
+          @env['PATH_INFO'] = p
         end
         
       end

@@ -22,17 +22,11 @@ module Carpool
     def call(env)
       @env = env
       @params = CGI.parse(env['QUERY_STRING'])
-      cookies[:scope] = "passenger"
+      
+      carpool_cookies['scope'] ||= "passenger"
       
       # If this isn't an authorize request from the driver, just ignore it.
       return @app.call(env) unless valid_request? && valid_referrer?
-      
-      if env['HTTP_X_REQUESTED_WITH'] && env['HTTP_X_REQUESTED_WITH'].to_s.downcase.eql?('xmlhttprequest')      
-        # If we are requesting authentication via ajax, attempt to do so via proxy.
-        
-        # Set a js content-type so we know to respond with javascript.
-        env['Content-Type'] = "text/javascript"
-      end      
       
       # If we can't find our payload, then we need to abort.
       return [500, {}, 'Invalid seatbelt.'] if @params['seatbelt'].nil? or @params['seatbelt'].blank?

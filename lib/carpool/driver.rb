@@ -37,8 +37,9 @@ module Carpool
     
     def call(env)
       
-      @env    = env
-      cookies[:scope]    = "driver"
+      @env = env
+      carpool_cookies['scope'] = "driver"
+      puts session.inspect
 
       # Unless we are trying to authenticate a passenger, just continue through the stack.
       return @app.call(env) unless valid_request? && valid_referrer? 
@@ -52,13 +53,14 @@ module Carpool
         return [500, {'Content-Type'=>'text/plain'}, 'Unauthorized request.']
       end
       
-      # We are logging out this user, clear out our cookies and reset the session.
+      # We are logging out this user, clear out our cookies and reset the session, then pass the request to the normal revoke path.
       if is_revoking?
         destroy_session!
-        return Carpool.redirect_request(Carpool::Driver.revoke_uri, 'Redirecting logged out session...')
+        set_new_path(Carpool::Driver.revoke_uri)
+        return @app.call(env)
       end
       
-      cookies[:current_passenger] = current_passenger.first[referrer.host.to_s]
+      carpool_cookies['current_passenger'] = current_passenger.first[referrer.host.to_s]
       
       # Attempt to find an existing driver session.
       # If one is found, redirect back to the passenger site and include our seatbelt
@@ -67,34 +69,19 @@ module Carpool
       #   2) The session payload. This is an AES encrypted hash of whatever attributes you've made available. The encrypted hash is
       #      keyed with the site_key and secret of the referring site for extra security.
       #
-      unless cookies[:passenger_token]
-        
-        requested_with = env['HTTP_X_REQUESTED_WITH'].to_s
-        
-        unless requested_with.eql?("CarpoolRemoteAuthRequest") || requested_with.downcase.eql?("xmlhttprequest")
-          Carpool.auth_attempt = true
-          cookies[:redirect_to] = referrer
-          @env['PATH_INFO'] = Carpool::Driver.unauthorized_uri
-          return @app.call(env)
-          #response = Carpool.redirect_request(Carpool::Driver.unauthorized_uri, 'Redirecting unauthorized user...')
-        else
-          # If we are using AJAX to process this request, return false for login as we cannot simply
-          # redirect the request.
-          response = [200, {'Content-Type' => 'text/plain'}, 'unauthorized']
-        end
-        
-      else
-        
-        cookies[:redirect_to] = referrer
-        seatbelt = SeatBelt.new(env).create_payload!
-
-        response = Carpool.redirect_request(seatbelt, 'Approved!')
+      unless carpool_passenger_token.nil?
+        seatbelt = SeatBelt.new(env)
+        seatbelt.set_referrer(referrer)
         Carpool.auth_attempt  = false
         cleanup_session!
-                
+        return Carpool.redirect_request(seatbelt.create_payload!, 'Approved!')
       end
       
-      response
+      Carpool.auth_attempt = true
+      carpool_cookies['redirect_to'] = referrer
+      
+      set_new_path(Carpool::Driver.unauthorized_uri)
+      return @app.call(env)
       
     end
     

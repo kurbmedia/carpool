@@ -22,7 +22,7 @@ module Carpool
     # on the other end.
     #
     def fasten!(user)
-      cookies[:passenger_token] = generate_token(user)
+      carpool_passenger_token = generate_token(user)
       Carpool.auth_attempt = false
       payload = create_payload!
       cleanup_session!
@@ -49,9 +49,9 @@ module Carpool
     # Create a redirection payload to be sent back to our passenger
     def create_payload!
       seatbelt = self.to_s
-      referrer = cookies[:redirect_to]
+      referrer = carpool_cookies['redirect_to']
       driver   = Digest::SHA256.new
-      driver   = driver.update(cookies[:current_passenger][:secret]).to_s
+      driver   = driver.update(carpool_cookies['current_passenger'][:secret]).to_s
       new_uri  = "#{referrer.scheme}://"
       new_uri << referrer.host
       new_uri << ((referrer.port != 80 && referrer.port != 443) ? ":#{referrer.port}" : "")
@@ -59,13 +59,17 @@ module Carpool
     end
     
     def to_s
-      CGI.escape(Base64.encode64({:redirect_uri => cookies[:redirect_to].to_s, :user => cookies[:passenger_token] }.to_yaml.to_s).gsub( /\s/, ''))
+      CGI.escape(Base64.encode64({ :redirect_uri => carpool_cookies['redirect_to'].to_s, :user => carpool_passenger_token }.to_yaml.to_s).gsub( /\s/, ''))
+    end
+    
+    def set_referrer(ref)
+      carpool_cookies['redirect_to'] = ref
     end
     
     private
     
     def generate_token(user)
-      referrer  = cookies[:redirect_to]
+      referrer  = carpool_cookies['redirect_to']
       passenger = Carpool::Driver.passengers.reject{ |p| p.keys.first.downcase != referrer.host }.first.values.first
             
       digest    = Digest::SHA256.new

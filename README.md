@@ -97,6 +97,12 @@ Nate Wiger's [FastAES](https://github.com/nateware/fast-aes) gem. Although this 
 	  end
 	end
 
+### Caveats
+
+To properly ensure the proper domains are being accessed/used, Carpool relies on the `SERVER_NAME` http header. Make sure that this header is properly set via your nginx/apache configuration. If using Passenger standalone, it seems like this variable will be `_` so make sure that you properly handle that.
+
+If you choose to, you can set `SERVER_NAME` to `HTTP_HOST`, but note that the `HTTP_HOST` variable can be spoofed by end users.
+
 ### Note on Patches/Pull Requests
  
 * Fork the project.

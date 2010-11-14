@@ -4,7 +4,7 @@ require 'carpool/passenger'
 require 'carpool/seatbelt'
 require 'base64'
 
-require 'carpool/rails/railtie' if defined?(Rails)
+require 'carpool/rails/railtie' if defined?(Rails) && defined?(Rails::Railtie)
 
 module Carpool
   

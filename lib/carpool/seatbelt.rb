@@ -49,7 +49,6 @@ module Carpool
     
     # Create a redirection payload to be sent back to our passenger
     def create_payload!
-      puts self.class.to_s
       seatbelt = self.to_s
       referrer = carpool_cookies['redirect_to']
       driver   = Digest::SHA256.new

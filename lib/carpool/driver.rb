@@ -39,7 +39,12 @@ module Carpool
       
       @env = env
       carpool_cookies['scope'] = "driver"
-      puts session.inspect
+      
+      # TODO: See if this is even necessary? Basically make sure auth_attempt
+      # is set to true if current_passenger is set. This value shouldn't be set if we've already
+      # processed a passenger.
+      Carpool.auth_attempt = true if carpool_cookies['current_passenger']
+
       # Unless we are trying to authenticate a passenger, just continue through the stack.
       return @app.call(env) unless valid_request? && valid_referrer? 
 

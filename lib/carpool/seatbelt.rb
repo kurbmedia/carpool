@@ -34,6 +34,7 @@ module Carpool
       payload  = @env['X-CARPOOL-PAYLOAD']
       payload  = payload.flatten.first if payload.is_a?(Array) # TODO: Figure out why our header is an array?
       seatbelt = YAML.load(Base64.decode64(CGI.unescape(payload))).to_hash
+      seatbelt = stringify_keys(seatbelt)
       user     = Base64.decode64(seatbelt['user'])
       key      = Carpool.generate_site_key(@env['SERVER_NAME'])
       secret   = Carpool::Passenger.secret
@@ -82,6 +83,13 @@ module Carpool
     
     def gather_credentials(user)
       user.encrypted_credentials
+    end
+    
+    def stringify_keys(hash)
+      hash.inject({}) do |options, (key, value)|
+        options[key.to_s] = value
+        options
+      end
     end
         
   end

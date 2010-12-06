@@ -2,6 +2,7 @@ require 'carpool/mixins/core'
 require 'carpool/driver'
 require 'carpool/passenger'
 require 'carpool/seatbelt'
+require 'carpool/session_manager'
 require 'base64'
 
 require 'carpool/rails/railtie' if defined?(Rails) && defined?(Rails::Railtie)
@@ -9,15 +10,7 @@ require 'carpool/rails/railtie' if defined?(Rails) && defined?(Rails::Railtie)
 module Carpool
   
   class << self
-    
-    def auth_attempt=(bool)
-      @auth_attempt = bool
-    end
-    
-    def auth_attempt?
-      @auth_attempt ||= false
-    end
-    
+      
     def driver_uri
       "#{Carpool::Passenger.driver_uri}/sso/authenticate"
     end
@@ -30,15 +23,6 @@ module Carpool
     def acts_as; @acts_as; end
     def acts_as?(type)
       @acts_as == type.to_sym
-    end
-    
-    def redirect_request(loc, message = "Redirecting")
-      [302,
-        { 'Content-Type'   => 'text/plain', 
-          'Location'       => loc,
-          'Cache-Control'  => 'private, no-cache, max-age=0, must-revalidate',
-          'Content-Length' => "#{message.to_s.length}"
-        }, message]
     end
     
   end

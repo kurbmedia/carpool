@@ -6,13 +6,12 @@ module Carpool
     
     include Carpool::Mixins::Core
     
-    attr_accessor :env
-    attr_accessor :redirect_uri
-    attr_accessor :user
-    
+    attr_accessor :_response
+        
     # SeatBelt instances require access to the rack environment.
     def initialize(env)
       @env = env
+      self
     end
     
     # 'Attaches' the current user into the session so it can be re-authenticated when
@@ -21,12 +20,24 @@ module Carpool
     # Fasten! returns a url for redirection back to our passenger site including the seatbelt used for authentication
     # on the other end.
     #
-    def fasten!(user)
-      carpool_cookies['passenger_token'] = generate_token(user)
-      Carpool.auth_attempt = false
-      payload = create_payload!
+    def fasten!
+      
+      seatbelt  = self.to_s
+      passenger = stringify_keys([manager.passenger_for_auth.values].flatten.first)
+      puts passenger.inspect
+      referrer  = manager.current_passenger 
+      
+      driver   = Digest::SHA256.new
+      driver   = driver.update(passenger['secret']).to_s
+      new_uri  = "#{referrer.scheme}://"
+      new_uri << referrer.host
+      new_uri << ((referrer.port != 80 && referrer.port != 443) ? ":#{referrer.port}" : "")
+      new_uri << "/sso/authorize?seatbelt=#{seatbelt}&driver=#{driver}"
+      
       cleanup_session!
-      payload
+      
+      @_response = [307, {"Location" => new_uri}, "Redirect to passenger."]      
+      
     end
     
     # Restore the user from our payload. We 'remove' their seatbelt because they have arrived!
@@ -47,42 +58,21 @@ module Carpool
       self
     end
     
-    # Create a redirection payload to be sent back to our passenger
-    def create_payload!
-      seatbelt = self.to_s
-      referrer = carpool_cookies['redirect_to']
-      driver   = Digest::SHA256.new
-      driver   = driver.update(carpool_cookies['current_passenger'][:secret]).to_s
-      new_uri  = "#{referrer.scheme}://"
-      new_uri << referrer.host
-      new_uri << ((referrer.port != 80 && referrer.port != 443) ? ":#{referrer.port}" : "")
-      new_uri << "/sso/authorize?seatbelt=#{seatbelt}&driver=#{driver}"
-    end
-    
     def to_s
-      CGI.escape(Base64.encode64({ 'redirect_uri' => carpool_cookies['redirect_to'].to_s, 'user' => carpool_cookies['passenger_token'] }.to_yaml.to_s).gsub( /\s/, ''))
+      CGI.escape(Base64.encode64({'redirect_uri' => manager.current_passenger.to_s, 'user' => carpool_cookies['passenger_token'] }.to_yaml.to_s).gsub( /\s/, ''))
     end
     
-    def set_referrer(ref)
-      carpool_cookies['redirect_to'] = ref
+    def reject!
+      @_response = [500, {}, "Invalid passenger."]
+    end
+    
+    def response
+      @_response ||= [500, {}, "Invalid request."]
+      @_response[1].reverse_merge!({'Cache-Control'  => 'private, no-cache, max-age=0, must-revalidate', "Content-Type" => 'text/plain'})
+      @_response
     end
     
     private
-    
-    def generate_token(user)
-      referrer  = carpool_cookies['redirect_to'] || URI.parse((Rack::Request.new(request.env).params['referer'] || Rack::Request.new(request.env).params['referrer']))
-      passenger = Carpool::Driver.passengers.reject{ |p| p.keys.first.downcase != referrer.host }.first.values.first
-            
-      digest    = Digest::SHA256.new
-      digest.update("#{passenger[:site_key]}--#{passenger[:secret]}")
-      aes = FastAES.new(digest.digest)
-      Base64.encode64(aes.encrypt(gather_credentials(user).to_yaml.to_s)).gsub( /\s/, '')
-      
-    end
-    
-    def gather_credentials(user)
-      user.encrypted_credentials
-    end
     
     def stringify_keys(hash)
       hash.inject({}) do |options, (key, value)|

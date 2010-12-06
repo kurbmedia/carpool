@@ -71,7 +71,7 @@ module Carpool
     
     def generate_token(user)
       referrer  = carpool_cookies['redirect_to'] || URI.parse((Rack::Request.new(request.env).params['referer'] || Rack::Request.new(request.env).params['referrer']))
-      passenger = Carpool::Driver.passengers.reject{ |p| p.keys.first.downcase != referrer.host }.first.values.first
+      passenger = Carpool::Driver.passengers.detect{ |p| p.keys.first.downcase.to_s == referrer.host }
             
       digest    = Digest::SHA256.new
       digest.update("#{passenger[:site_key]}--#{passenger[:secret]}")

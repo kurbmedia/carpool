@@ -16,7 +16,7 @@ module Carpool
       throw(:carpool, auth_redirect) unless authentication_exists?
     end
     
-    def authorize!(user = null)
+    def authorize!(user = nil)
       unless Carpool.acts_as?(:passenger)
         return false unless auth_request?
         carpool_cookies['passenger_token'] = generate_token(user)            

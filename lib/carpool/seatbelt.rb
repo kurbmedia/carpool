@@ -6,7 +6,7 @@ module Carpool
     
     include Carpool::Mixins::Core
     
-    attr_accessor :_response
+    attr_accessor :_response, :user, :redirect_uri
         
     # SeatBelt instances require access to the rack environment.
     def initialize(env)
@@ -55,6 +55,8 @@ module Carpool
       data = aes.decrypt(user)
       @redirect_uri = seatbelt['redirect_uri'].to_s
       @user         = YAML.load(data).to_hash
+      
+      @_response = [307, {"Location" => @redirect_uri}, "Redirect to original url."]      
       self
     end
     

@@ -16,10 +16,14 @@ module Carpool
       throw(:carpool, auth_redirect) unless authentication_exists?
     end
     
-    def authorize!(user)
-      return false unless auth_request?
-      carpool_cookies['passenger_token'] = generate_token(user)            
-      throw(:carpool, seatbelt.fasten!)
+    def authorize!(user = null)
+      unless Carpool.acts_as?(:passenger)
+        return false unless auth_request?
+        carpool_cookies['passenger_token'] = generate_token(user)            
+        throw(:carpool, seatbelt.fasten!)
+      else
+        throw(:carpool, seatbelt.remove!)
+      end
     end
     
     def auth_redirect
@@ -54,6 +58,11 @@ module Carpool
     def revoke!
       carpool_cookies.delete('passenger_token')
       cleanup_session!
+    end
+    
+    def user
+      seatbelt.remove!
+      seatbelt.user
     end
     
     private

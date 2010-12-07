@@ -26,7 +26,6 @@ module Carpool
       result = catch(:carpool) do
         @app.call(env)
       end
-      puts result.inspect
       return result
       
     end

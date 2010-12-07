@@ -17,7 +17,7 @@ module Carpool
         end
         
         def session
-          @env['rack.session']
+          request.session
         end
         
         def cleanup_session!
@@ -27,7 +27,8 @@ module Carpool
         
         def destroy_session!
           cleanup_session!
-          carpool_cookies.delete('passenger_tokens')
+          carpool_cookies = {}
+          session.delete('carpool.cookies')
         end
         
         def manager

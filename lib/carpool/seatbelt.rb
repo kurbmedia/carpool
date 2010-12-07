@@ -59,7 +59,6 @@ module Carpool
     def passenger_for_auth
       passenger = Carpool::Driver.passengers.detect{ |p| p[:host].downcase.include?(current_passenger.host.downcase) }
       throw(:carpool, Carpool::Responder.invalid) and return if current_passenger.nil?
-      puts passenger.inspect
       passenger
     end
 

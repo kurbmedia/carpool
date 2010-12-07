@@ -32,7 +32,6 @@ module Carpool
       @env = env      
       
       env['carpool'] = Carpool::Seatbelt.new(env) unless env['carpool'] && env['carpool'] != Carpool::Seatbelt
-      
       return revoke_all_instances! if is_revoking?       
 
       if valid_request?

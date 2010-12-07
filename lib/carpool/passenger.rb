@@ -1,5 +1,3 @@
-require 'net/http'
-
 module Carpool
   class Passenger
     
@@ -21,43 +19,22 @@ module Carpool
     
     def call(env)
       @env = env
-      @params = CGI.parse(env['QUERY_STRING'])
       
-      carpool_cookies['scope'] ||= "passenger"
+      env['carpool'] = Carpool::Seatbelt.new(env) unless env['carpool'] && env['carpool'] != Carpool::Seatbelt
       
-      # If this isn't an authorize request from the driver, just ignore it.
-      return @app.call(env) unless valid_request? && valid_referrer?
-      
-      # If we can't find our payload, then we need to abort.
-      return [500, {}, 'Invalid seatbelt.'] if @params['seatbelt'].nil? or @params['seatbelt'].blank?
-      
-      # Set a custom HTTP header for our payload and send the request to the user's /sso/authorize handler.
-      env['X-CARPOOL-PAYLOAD'] = @params['seatbelt']
-      
-      return @app.call(env)
+      return @app.call(env) unless valid_request?
+      result = catch(:carpool) do
+        @app.call(env)
+      end
+      puts result.inspect
+      return result
       
     end
     
     private
     
     def valid_request?
-      @env['PATH_INFO'] == "/sso/authorize" || @env['PATH_INFO'] == "/sso/remote_authentication"
-    end
-    
-    def valid_referrer?
-      return false if @env['HTTP_REFERER'].nil? or @env['HTTP_REFERER'].blank?
-      return false if @params['driver'].nil?    or @params['driver'].blank?
-      
-      referring_uri = @params['driver'].to_s
-      secret_match  = Digest::SHA256.new
-      secret_match  = secret_match.update(Carpool::Passenger.secret).to_s
-      referring_uri = referring_uri.to_s.gsub(/(\[|\]|\")/,'') # TODO: Figure out why ruby 1.9.2 has extra chars.
-      secret_match  = secret_match.to_s
-      referring_uri == secret_match
-    end
-    
-    def authenticate_from_remote!
-      
+      @env['PATH_INFO'] == "/sso/authorize"
     end
     
   end

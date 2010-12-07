@@ -10,23 +10,7 @@ module Carpool
         
         def carpool_cookies
           session['carpool.cookies'] ||= {}
-        end
-        
-        def carpool_passenger_token
-          carpool_cookies['passenger_token']
-        end
-        
-        def carpool_passenger_token=(token)
-          carpool_cookies['passenger_token'] = token
-        end
-        
-        def cleanup_session!
-          ['redirect_to', 'current_passenger'].each{ |k| carpool_cookies.delete(k) }
-        end
-        
-        def destroy_session!
-          session.clear
-        end
+        end        
         
         def request
           @request ||= Rack::Request.new(@env)
@@ -36,8 +20,27 @@ module Carpool
           @env['rack.session']
         end
         
-        def set_new_path(p)
-          @env['PATH_INFO'] = p
+        def cleanup_session!
+          carpool_cookies.delete('requesting_authentication')
+          carpool_cookies.delete('passenger_uri')
+        end
+        
+        def destroy_session!
+          cleanup_session!
+          carpool_cookies.delete('passenger_tokens')
+        end
+        
+        def manager
+          @env['carpool']
+        end
+        
+        def carpool_passenger_tokens
+          carpool_cookies['passenger_tokens'] ||= []
+        end
+        
+        def update_authentication!(new_token)
+          carpool_passenger_tokens << new_token
+          carpool_passenger_tokens.uniq!
         end
         
       end

@@ -25,8 +25,22 @@ module Carpool
           carpool_cookies.delete('passenger_uri')
         end
         
+        def destroy_session!
+          cleanup_session!
+          carpool_cookies.delete('passenger_tokens')
+        end
+        
         def manager
           @env['carpool']
+        end
+        
+        def carpool_passenger_tokens
+          carpool_cookies['passenger_tokens'] ||= []
+        end
+        
+        def update_authentication!(new_token)
+          carpool_passenger_tokens << new_token
+          carpool_passenger_tokens.uniq!
         end
         
       end

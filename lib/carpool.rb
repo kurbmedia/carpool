@@ -1,9 +1,11 @@
 require 'carpool/mixins/core'
+require 'carpool/responder'
+require 'carpool/encryptor'
 require 'carpool/driver'
 require 'carpool/passenger'
 require 'carpool/seatbelt'
-require 'carpool/session_manager'
 require 'base64'
+require 'fast-aes'
 
 require 'carpool/rails/railtie' if defined?(Rails) && defined?(Rails::Railtie)
 
@@ -24,17 +26,7 @@ module Carpool
     def acts_as?(type)
       @acts_as == type.to_sym
     end
-    
-  end
-  
-  def self.generate_site_key(url)
-    digest = Digest::SHA256.new
-    digest.update(url)
-    Base64.encode64(digest.digest).gsub( /\s/, '')
-  end
-  
-  def self.unpack_key(key)
-    Base64.decode64(key)
+
   end
     
 end

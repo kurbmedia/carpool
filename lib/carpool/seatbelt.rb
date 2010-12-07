@@ -1,87 +1,67 @@
-require 'fast-aes'
-require 'yaml'
-
 module Carpool
-  class SeatBelt
+  class Seatbelt
     
     include Carpool::Mixins::Core
     
-    attr_accessor :_response, :user, :redirect_uri
-        
-    # SeatBelt instances require access to the rack environment.
+    attr_accessor :env, :current_passenger, :current_user, :redirect_to
+    
     def initialize(env)
       @env = env
-      self
     end
     
-    # 'Attaches' the current user into the session so it can be re-authenticated when
-    # a passenger requests it at a later date. We 'fasten' the users seatbelt for the trip back to the
-    # referring site.
-    # Fasten! returns a url for redirection back to our passenger site including the seatbelt used for authentication
-    # on the other end.
-    #
-    def fasten!
-      
-      seatbelt  = self.to_s
-      passenger = stringify_keys([manager.passenger_for_auth.values].flatten.first)
-      puts passenger.inspect
-      referrer  = manager.current_passenger 
-      
-      driver   = Digest::SHA256.new
-      driver   = driver.update(passenger['secret']).to_s
-      new_uri  = "#{referrer.scheme}://"
-      new_uri << referrer.host
-      new_uri << ((referrer.port != 80 && referrer.port != 443) ? ":#{referrer.port}" : "")
-      new_uri << "/sso/authorize?seatbelt=#{seatbelt}&driver=#{driver}"
-      
-      cleanup_session!
-      
-      @_response = [307, {"Location" => new_uri}, "Redirect to passenger."]      
-      
+    def authentication_exists?
+      !carpool_passenger_tokens.empty?
     end
     
-    # Restore the user from our payload. We 'remove' their seatbelt because they have arrived!
-    def remove!
-      payload  = @env['X-CARPOOL-PAYLOAD']
-      payload  = payload.flatten.first if payload.is_a?(Array) # TODO: Figure out why our header is an array?
-      seatbelt = YAML.load(Base64.decode64(CGI.unescape(payload))).to_hash
-      seatbelt = stringify_keys(seatbelt)
-      user     = Base64.decode64(seatbelt['user'])
-      key      = Carpool.generate_site_key(@env['SERVER_NAME'])
-      secret   = Carpool::Passenger.secret
-      digest   = Digest::SHA256.new
-      digest.update("#{key}--#{secret}")
-      aes  = FastAES.new(digest.digest)
-      data = aes.decrypt(user)
-      @redirect_uri = seatbelt['redirect_uri'].to_s
-      @user         = YAML.load(data).to_hash
-      
-      @_response = [307, {"Location" => @redirect_uri}, "Redirect to original url."]      
-      self
+    def authenticate!
+      throw(:carpool, Carpool::Responder.authenticate) unless authentication_exists?
     end
     
-    def to_s
-      CGI.escape(Base64.encode64({'redirect_uri' => manager.current_passenger.to_s, 'user' => carpool_cookies['passenger_token'] }.to_yaml.to_s).gsub( /\s/, ''))
+    def authorize!(user = nil)
+      unless Carpool.acts_as?(:passenger)
+        return false unless auth_request?
+        update_authentication!(passenger_for_auth[:secret])
+        token   = Carpool::Encryptor.generate_token(user.encrypted_credentials, passenger_for_auth[:secret])
+        payload = Carpool::Encryptor.generate_payload(current_passenger, token)        
+        throw(:carpool, Carpool::Responder.passenger_redirect(current_passenger, payload))        
+      else
+        seatbelt = Carpool::Encryptor.process_seatbelt(request.params['seatbelt'])
+        throw(:carpool, Carpool::Responder.invalid) and return unless seatbelt[:user].is_a?(Hash)
+        @current_user = seatbelt[:user]
+        @redirect_to  = seatbelt[:redirect_to]
+      end
     end
     
-    def reject!
-      @_response = [500, {}, "Invalid passenger."]
+    def auth_request!
+      return if auth_request?
+      carpool_cookies['passenger_uri'] = @env['HTTP_REFERER']
+      carpool_cookies['requesting_authentication'] = true
     end
     
-    def response
-      @_response ||= [500, {}, "Invalid request."]
-      @_response[1].reverse_merge!({'Cache-Control'  => 'private, no-cache, max-age=0, must-revalidate', "Content-Type" => 'text/plain'})
-      @_response
+    def auth_request?
+      carpool_cookies['requesting_authentication'] && carpool_cookies['requesting_authentication'] == true
+    end
+    
+    def current_passenger
+      URI.parse(carpool_cookies['passenger_uri'])
+    end
+    
+    def revoke!
+      destroy_session!
+    end
+    
+    def success!
+      throw(:carpool, [303, {"Location" => @redirect_to.to_s}, "Authorized!"])
     end
     
     private
     
-    def stringify_keys(hash)
-      hash.inject({}) do |options, (key, value)|
-        options[key.to_s] = value
-        options
-      end
+    def passenger_for_auth
+      passenger = Carpool::Driver.passengers.detect{ |p| p[:host].downcase.include?(current_passenger.host.downcase) }
+      throw(:carpool, Carpool::Responder.invalid) and return if current_passenger.nil?
+      puts passenger.inspect
+      passenger
     end
-        
-  end
+
+  end  
 end

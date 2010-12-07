@@ -5,7 +5,7 @@
 
 Gem::Specification.new do |s|
   s.name = %q{carpool}
-  s.version = "0.2.2"
+  s.version = "0.3.0"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Brent Kirby"]
@@ -26,11 +26,13 @@ Gem::Specification.new do |s|
     "init.rb",
     "lib/carpool.rb",
     "lib/carpool/driver.rb",
+    "lib/carpool/encryptor.rb",
     "lib/carpool/mixins/action_controller.rb",
     "lib/carpool/mixins/action_view.rb",
     "lib/carpool/mixins/core.rb",
     "lib/carpool/passenger.rb",
     "lib/carpool/rails/railtie.rb",
+    "lib/carpool/responder.rb",
     "lib/carpool/seatbelt.rb",
     "test/helper.rb",
     "test/test_carpool.rb"
